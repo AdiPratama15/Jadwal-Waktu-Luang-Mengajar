@@ -333,9 +333,11 @@
       daySelect.focus();
     }
     
-    // Menghapus input group
+    // Menghapus input group dengan konfirmasi aksi
     function removeInputGroup(btn) {
-      btn.parentElement.remove();
+      if (confirm("Anda yakin ingin menghapus sesi ini?")) {
+        btn.parentElement.remove();
+      }
     }
     
     // Fungsi algoritma Zeller untuk mendeteksi nama hari
@@ -353,7 +355,6 @@
     
     // Menghasilkan jadwal dari seluruh input group dan menyalin ke clipboard
     function generateSchedule() {
-      // Validasi terlebih dahulu sebelum membuat jadwal
       if (!validateInputs()) return;
       
       const now = new Date();
@@ -389,7 +390,6 @@
     
     // Menyalin jadwal ke clipboard
     function copySchedule() {
-      // Validasi ulang sebelum menyalin
       if (!validateInputs()) return;
       
       const scheduleContent = document.getElementById('scheduleContent');
