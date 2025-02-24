@@ -120,7 +120,7 @@
       });
     }
     
-    // Inisialisasi input group pertama saat halaman dimuat dan mengarahkan fokus ke dropdown tanggal
+    // Inisialisasi input group pertama saat halaman dimuat dan arahkan fokus ke dropdown tanggal
     document.addEventListener('DOMContentLoaded', function() {
       const currentDate = new Date();
       const currentMonth = currentDate.getMonth() + 1;
@@ -142,10 +142,13 @@
       daySelect.focus();
     });
     
-    // Menambahkan input group baru (default bulan mengikuti input group terakhir)
+    // Menambahkan input group baru dengan default day: jika bulan sama dengan current month, maka default ke current day; jika tidak, default ke 1.
     function addInputGroup() {
       const container = document.getElementById('inputContainer');
-      let defaultMonth = new Date().getMonth() + 1; // default jika belum ada input sebelumnya
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentDay = now.getDate();
+      let defaultMonth = currentMonth; // default jika belum ada input sebelumnya
       
       const groups = container.querySelectorAll('.input-group');
       if (groups.length > 0) {
@@ -188,11 +191,16 @@
       
       updateDayOptions(group);
       
+      // Jika default bulan sama dengan current month, set default day ke current day; jika tidak, biarkan default 1.
+      if (defaultMonth === currentMonth) {
+        daySelect.value = currentDay;
+      }
+      
       monthSelect.addEventListener('change', function() {
         updateDayOptions(group);
       });
       
-      // Mengarahkan fokus ke dropdown tanggal setelah menambahkan input group baru
+      // Arahkan fokus ke dropdown tanggal setelah menambahkan input group baru
       daySelect.focus();
     }
     
