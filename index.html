@@ -141,15 +141,21 @@
       // Karena default bulan adalah current month, set tanggal ke current day
       daySelect.value = curDay;
       
+      // Event: saat mengubah bulan pada input group pertama
       monthSelect.addEventListener('change', function() {
         updateDayOptions(initialGroup);
-        // Jika bulan yang dipilih bukan current month, set tanggal ke 1 dan pindahkan fokus ke dropdown tanggal
         const now = new Date();
         const curMonth = now.getMonth() + 1;
         if (parseInt(this.value) !== curMonth) {
           daySelect.value = 1;
           daySelect.focus();
         }
+      });
+      
+      // Event: saat memilih tanggal pada input group pertama
+      daySelect.addEventListener('change', function() {
+        // Pindahkan fokus ke input waktu (start time) pada group yang sama
+        initialGroup.querySelector('input[type="time"]').focus();
       });
       
       daySelect.focus();
@@ -209,6 +215,7 @@
         daySelect.value = curDay;
       }
       
+      // Event: saat mengubah bulan pada input group baru
       monthSelect.addEventListener('change', function() {
         updateDayOptions(group);
         const now = new Date();
@@ -217,6 +224,11 @@
           daySelect.value = 1;
           daySelect.focus();
         }
+      });
+      
+      // Event: saat memilih tanggal pada input group baru
+      daySelect.addEventListener('change', function() {
+        group.querySelector('input[type="time"]').focus();
       });
       
       daySelect.focus();
