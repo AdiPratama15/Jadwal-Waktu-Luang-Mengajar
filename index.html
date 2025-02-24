@@ -15,18 +15,29 @@
       display: flex;
       gap: 10px;
       margin-bottom: 10px;
+      align-items: flex-end;
+    }
+    .input-field {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .input-field label {
+      font-size: 0.9em;
+      margin-bottom: 3px;
     }
     select, input {
       padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
-      flex: 1;
+      font-size: 1em;
     }
     button {
       padding: 8px 16px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      font-size: 1em;
     }
     #addBtn {
       background-color: #4CAF50;
@@ -59,13 +70,25 @@
   <div class="container">
     <h1>Jadwal Waktu Luang Mengajar</h1>
     
-    <!-- Setiap input group memiliki dropdown bulan dan tanggal serta dua input waktu -->
+    <!-- Input group pertama dengan label -->
     <div id="inputContainer">
       <div class="input-group">
-        <select class="month-select" required></select>
-        <select class="date-select" required></select>
-        <input type="time" required>
-        <input type="time" required>
+        <div class="input-field">
+          <label>Pilih Bulan</label>
+          <select class="month-select" required></select>
+        </div>
+        <div class="input-field">
+          <label>Pilih Tanggal</label>
+          <select class="date-select" required></select>
+        </div>
+        <div class="input-field">
+          <label>Waktu Mulai</label>
+          <input type="time" required placeholder="Waktu Mulai">
+        </div>
+        <div class="input-field">
+          <label>Waktu Selesai</label>
+          <input type="time" required placeholder="Waktu Selesai">
+        </div>
         <button type="button" class="remove-btn" onclick="removeInputGroup(this)">-</button>
       </div>
     </div>
@@ -273,36 +296,69 @@
         }
       }
       
+      // Buat struktur input group baru dengan label
       const group = document.createElement('div');
       group.className = 'input-group';
       
+      // Kolom Bulan
+      const monthField = document.createElement('div');
+      monthField.className = 'input-field';
+      const monthLabel = document.createElement('label');
+      monthLabel.textContent = "Pilih Bulan";
       const monthSelect = document.createElement('select');
       monthSelect.className = 'month-select';
       monthSelect.setAttribute('required', '');
       populateMonthSelect(monthSelect, defaultMonth);
+      monthField.appendChild(monthLabel);
+      monthField.appendChild(monthSelect);
       
+      // Kolom Tanggal
+      const dayField = document.createElement('div');
+      dayField.className = 'input-field';
+      const dayLabel = document.createElement('label');
+      dayLabel.textContent = "Pilih Tanggal";
       const daySelect = document.createElement('select');
       daySelect.className = 'date-select';
       daySelect.setAttribute('required', '');
+      dayField.appendChild(dayLabel);
+      dayField.appendChild(daySelect);
       
+      // Kolom Waktu Mulai
+      const startTimeField = document.createElement('div');
+      startTimeField.className = 'input-field';
+      const startLabel = document.createElement('label');
+      startLabel.textContent = "Waktu Mulai";
       const startTimeInput = document.createElement('input');
       startTimeInput.type = 'time';
       startTimeInput.required = true;
+      startTimeInput.placeholder = "Waktu Mulai";
+      startTimeField.appendChild(startLabel);
+      startTimeField.appendChild(startTimeInput);
       
+      // Kolom Waktu Selesai
+      const endTimeField = document.createElement('div');
+      endTimeField.className = 'input-field';
+      const endLabel = document.createElement('label');
+      endLabel.textContent = "Waktu Selesai";
       const endTimeInput = document.createElement('input');
       endTimeInput.type = 'time';
       endTimeInput.required = true;
+      endTimeInput.placeholder = "Waktu Selesai";
+      endTimeField.appendChild(endLabel);
+      endTimeField.appendChild(endTimeInput);
       
+      // Tombol hapus
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'remove-btn';
       removeBtn.textContent = '-';
       removeBtn.onclick = function() { removeInputGroup(this); };
       
-      group.appendChild(monthSelect);
-      group.appendChild(daySelect);
-      group.appendChild(startTimeInput);
-      group.appendChild(endTimeInput);
+      // Gabungkan semua kolom ke dalam group
+      group.appendChild(monthField);
+      group.appendChild(dayField);
+      group.appendChild(startTimeField);
+      group.appendChild(endTimeField);
       group.appendChild(removeBtn);
       
       container.appendChild(group);
@@ -367,8 +423,8 @@
         const month = parseInt(group.querySelector('.month-select').value);
         const day = parseInt(group.querySelector('.date-select').value);
         const scheduleYear = (month < curMonth) ? currentYear + 1 : currentYear;
-        const startTime = group.children[2].value.replace(':', '.');
-        const endTime = group.children[3].value.replace(':', '.');
+        const startTime = group.children[2].querySelector('input[type="time"]').value.replace(':', '.');
+        const endTime = group.children[3].querySelector('input[type="time"]').value.replace(':', '.');
         const timeRange = `${startTime}-${endTime}`;
         
         const hari = deteksiHari(day, month, scheduleYear);
