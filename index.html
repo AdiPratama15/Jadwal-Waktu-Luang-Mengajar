@@ -120,7 +120,7 @@
       });
     }
     
-    // Inisialisasi input group pertama saat halaman dimuat
+    // Inisialisasi input group pertama saat halaman dimuat dan mengarahkan fokus ke dropdown tanggal
     document.addEventListener('DOMContentLoaded', function() {
       const currentDate = new Date();
       const currentMonth = currentDate.getMonth() + 1;
@@ -137,6 +137,9 @@
       monthSelect.addEventListener('change', function() {
         updateDayOptions(initialGroup);
       });
+      
+      // Fokus otomatis ke dropdown tanggal saat laman dimuat
+      daySelect.focus();
     });
     
     // Menambahkan input group baru (default bulan mengikuti input group terakhir)
@@ -188,6 +191,9 @@
       monthSelect.addEventListener('change', function() {
         updateDayOptions(group);
       });
+      
+      // Mengarahkan fokus ke dropdown tanggal setelah menambahkan input group baru
+      daySelect.focus();
     }
     
     // Menghapus input group
@@ -208,7 +214,7 @@
       return days[(h + 7) % 7];
     }
     
-    // Menghasilkan jadwal dari seluruh input group
+    // Menghasilkan jadwal dari seluruh input group dan otomatis menyalin ke clipboard
     function generateSchedule() {
       const currentYear = new Date().getFullYear();
       const inputs = document.querySelectorAll('.input-group');
@@ -234,6 +240,9 @@
       outputHTML += `<p>Silahkan kabari saya semisal murid berminat les dan kira-kira jam berapa persisnya</p></div>`;
       outputHTML += `<button class="copy-btn" onclick="copySchedule()">Salin ke Clipboard</button>`;
       document.getElementById('output').innerHTML = outputHTML;
+      
+      // Otomatis menyalin jadwal ke clipboard setelah membuat jadwal
+      copySchedule();
     }
     
     // Menyalin jadwal ke clipboard
