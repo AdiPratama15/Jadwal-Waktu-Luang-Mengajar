@@ -54,7 +54,7 @@
   <div class="container">
     <h1>Jadwal Waktu Luang Mengajar</h1>
     
-    <!-- Setiap input group memiliki dropdown bulan dan tanggal -->
+    <!-- Setiap input group memiliki dropdown bulan dan tanggal serta dua input waktu -->
     <div id="inputContainer">
       <div class="input-group">
         <select class="month-select"></select>
@@ -92,12 +92,10 @@
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
-      // Jika selectedMonth kurang dari currentMonth, artinya opsi next month (atau roll over tahun)
       const yearForSelected = (selectedMonth < currentMonth) ? currentYear + 1 : currentYear;
-      
       const daysInMonth = getDaysInMonth(selectedMonth, yearForSelected);
       
-      // Simpan nilai tanggal sebelumnya jika ada
+      // Simpan nilai tanggal sebelumnya (jika ada)
       const previousDay = daySelect.value;
       daySelect.innerHTML = '';
       for (let i = 1; i <= daysInMonth; i++) {
@@ -114,7 +112,7 @@
       }
     }
     
-    // Fungsi untuk mengisi dropdown bulan dengan dua opsi: current month dan next month
+    // Fungsi untuk mengisi dropdown bulan dengan hanya dua opsi: current month dan next month
     function populateMonthSelect(selectElement, defaultMonth) {
       selectElement.innerHTML = '';
       const now = new Date();
@@ -135,6 +133,18 @@
       selectElement.appendChild(option2);
     }
     
+    // Fungsi untuk mengatur waktu end otomatis 1 jam setelah waktu start
+    function setDefaultEndTime(startInput, endInput) {
+      if (startInput.value) {
+        let parts = startInput.value.split(':');
+        let hour = parseInt(parts[0]);
+        let minute = parts[1];
+        let newHour = hour + 1;
+        if (newHour >= 24) newHour = newHour % 24;
+        endInput.value = newHour.toString().padStart(2, '0') + ':' + minute;
+      }
+    }
+    
     // Inisialisasi input group pertama saat halaman dimuat
     document.addEventListener('DOMContentLoaded', function() {
       const now = new Date();
@@ -144,12 +154,16 @@
       const initialGroup = document.querySelector('.input-group');
       const monthSelect = initialGroup.querySelector('.month-select');
       const daySelect = initialGroup.querySelector('.date-select');
+      const timeInputs = initialGroup.querySelectorAll('input[type="time"]');
+      const startTimeInput = timeInputs[0];
+      const endTimeInput = timeInputs[1];
+      
       populateMonthSelect(monthSelect, curMonth);
       updateDayOptions(initialGroup);
       // Karena default adalah current month, set tanggal ke current day
       daySelect.value = curDay;
       
-      // Event: ketika user mengubah pilihan bulan pada group pertama
+      // Saat user mengubah pilihan bulan, jika bukan current month maka set tanggal ke 1 dan fokus ke tanggal
       monthSelect.addEventListener('change', function() {
         updateDayOptions(initialGroup);
         const now = new Date();
@@ -160,15 +174,20 @@
         }
       });
       
-      // Event: ketika user memilih tanggal, fokus pindah ke input waktu (start time)
+      // Saat user memilih tanggal, fokus pindah ke input waktu start
       daySelect.addEventListener('change', function() {
-        initialGroup.querySelector('input[type="time"]').focus();
+        startTimeInput.focus();
+      });
+      
+      // Saat user memilih waktu start, otomatis set waktu end menjadi 1 jam kemudian
+      startTimeInput.addEventListener('change', function() {
+        setDefaultEndTime(startTimeInput, endTimeInput);
       });
       
       daySelect.focus();
     });
     
-    // Menambahkan input group baru dengan perhitungan default date yang mempertimbangkan jumlah sesi per hari
+    // Menambahkan input group baru dengan default tanggal dan bulan yang disesuaikan
     function addInputGroup() {
       const container = document.getElementById('inputContainer');
       const now = new Date();
@@ -180,19 +199,15 @@
       
       const groups = container.querySelectorAll('.input-group');
       if (groups.length === 0) {
-        // Jika belum ada input, gunakan current date
         defaultMonth = currentMonth;
         defaultDay = currentDay;
         defaultYear = currentYear;
       } else {
-        // Ambil data dari input group terakhir
         const lastGroup = groups[groups.length - 1];
         const lastMonth = parseInt(lastGroup.querySelector('.month-select').value);
         const lastDay = parseInt(lastGroup.querySelector('.date-select').value);
-        // Tentukan tahun untuk lastGroup
         let lastYear = (lastMonth < currentMonth) ? currentYear + 1 : currentYear;
         
-        // Hitung berapa banyak input group yang sudah memiliki kombinasi (lastMonth, lastDay, lastYear)
         let count = 0;
         groups.forEach(group => {
           const m = parseInt(group.querySelector('.month-select').value);
@@ -204,29 +219,23 @@
         });
         
         if (count >= 2) {
-          // Jika sudah ada dua sesi pada hari yang sama, default menjadi hari berikutnya.
-          // Tentukan jumlah hari di bulan lastMonth
           const daysInMonth = getDaysInMonth(lastMonth, lastYear);
           if (lastDay >= daysInMonth) {
-            // Jika sudah di akhir bulan, maka tanggal default menjadi 1 dan bulan berubah ke next month.
             defaultDay = 1;
             defaultMonth = (lastMonth === 12) ? 1 : lastMonth + 1;
             defaultYear = (lastMonth === 12) ? lastYear + 1 : lastYear;
           } else {
-            // Jika belum akhir bulan, default hari berikutnya
             defaultDay = lastDay + 1;
             defaultMonth = lastMonth;
             defaultYear = lastYear;
           }
         } else {
-          // Jika belum mencapai dua sesi pada hari yang sama, default tetap sama dengan input terakhir
           defaultMonth = lastMonth;
           defaultDay = lastDay;
           defaultYear = lastYear;
         }
       }
       
-      // Buat input group baru
       const group = document.createElement('div');
       group.className = 'input-group';
       
@@ -260,10 +269,8 @@
       container.appendChild(group);
       
       updateDayOptions(group);
-      // Set nilai default tanggal sesuai perhitungan
       daySelect.value = defaultDay;
       
-      // Event: ketika user mengganti bulan pada input group baru
       monthSelect.addEventListener('change', function() {
         updateDayOptions(group);
         const now = new Date();
@@ -274,12 +281,15 @@
         }
       });
       
-      // Event: ketika user memilih tanggal, fokus pindah ke input waktu (start time)
       daySelect.addEventListener('change', function() {
         group.querySelector('input[type="time"]').focus();
       });
       
-      // Fokus ke dropdown tanggal untuk input group baru
+      // Event: setelah user memilih waktu start, set waktu end otomatis 1 jam kemudian
+      startTimeInput.addEventListener('change', function() {
+        setDefaultEndTime(startTimeInput, endTimeInput);
+      });
+      
       daySelect.focus();
     }
     
@@ -301,7 +311,7 @@
       return days[(h + 7) % 7];
     }
     
-    // Menghasilkan jadwal dari seluruh input group dan otomatis menyalin ke clipboard
+    // Menghasilkan jadwal dari seluruh input group dan menyalin ke clipboard
     function generateSchedule() {
       const now = new Date();
       const curMonth = now.getMonth() + 1;
@@ -312,7 +322,6 @@
       inputs.forEach(group => {
         const month = parseInt(group.querySelector('.month-select').value);
         const day = parseInt(group.querySelector('.date-select').value);
-        // Tentukan tahun untuk setiap sesi berdasarkan pilihan bulan
         const scheduleYear = (month < curMonth) ? currentYear + 1 : currentYear;
         const startTime = group.children[2].value.replace(':', '.');
         const endTime = group.children[3].value.replace(':', '.');
@@ -332,7 +341,6 @@
       outputHTML += `<button class="copy-btn" onclick="copySchedule()">Salin ke Clipboard</button>`;
       document.getElementById('output').innerHTML = outputHTML;
       
-      // Otomatis menyalin jadwal ke clipboard setelah membuat jadwal
       copySchedule();
     }
     
