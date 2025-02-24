@@ -70,26 +70,34 @@
     
     <div id="output"></div>
   </div>
+  
   <script>
     const monthNames = [
       "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
     
-    // Menghitung jumlah hari dalam bulan tertentu (tahun didapat secara otomatis)
+    // Menghitung jumlah hari dalam bulan tertentu dengan memperhitungkan tahun
     function getDaysInMonth(month, year) {
       return new Date(year, month, 0).getDate();
     }
     
-    // Memperbarui opsi tanggal untuk input group tertentu
+    // Fungsi untuk memperbarui opsi tanggal pada suatu input group
     function updateDayOptions(group) {
       const monthSelect = group.querySelector('.month-select');
       const daySelect = group.querySelector('.date-select');
       const selectedMonth = parseInt(monthSelect.value);
-      const currentYear = new Date().getFullYear();
-      const daysInMonth = getDaysInMonth(selectedMonth, currentYear);
       
-      // Simpan nilai tanggal sebelumnya (jika ada)
+      // Tentukan tahun berdasarkan pilihan bulan dan current month
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      // Jika selectedMonth kurang dari currentMonth, artinya opsi next month (atau roll over tahun)
+      const yearForSelected = (selectedMonth < currentMonth) ? currentYear + 1 : currentYear;
+      
+      const daysInMonth = getDaysInMonth(selectedMonth, yearForSelected);
+      
+      // Simpan nilai tanggal sebelumnya jika ada
       const previousDay = daySelect.value;
       daySelect.innerHTML = '';
       for (let i = 1; i <= daysInMonth; i++) {
@@ -106,13 +114,13 @@
       }
     }
     
-    // Mengisi dropdown bulan dengan hanya dua opsi: current month dan next month
+    // Fungsi untuk mengisi dropdown bulan dengan dua opsi: current month dan next month
     function populateMonthSelect(selectElement, defaultMonth) {
       selectElement.innerHTML = '';
       const now = new Date();
       const curMonth = now.getMonth() + 1;
       if (!defaultMonth) defaultMonth = curMonth;
-      const nextMonth = curMonth === 12 ? 1 : curMonth + 1;
+      const nextMonth = (curMonth === 12) ? 1 : curMonth + 1;
       
       const option1 = document.createElement('option');
       option1.value = curMonth;
@@ -127,7 +135,7 @@
       selectElement.appendChild(option2);
     }
     
-    // Inisialisasi input group pertama saat laman dimuat dan arahkan fokus ke dropdown tanggal
+    // Inisialisasi input group pertama saat halaman dimuat
     document.addEventListener('DOMContentLoaded', function() {
       const now = new Date();
       const curMonth = now.getMonth() + 1;
@@ -138,10 +146,10 @@
       const daySelect = initialGroup.querySelector('.date-select');
       populateMonthSelect(monthSelect, curMonth);
       updateDayOptions(initialGroup);
-      // Karena default bulan adalah current month, set tanggal ke current day
+      // Karena default adalah current month, set tanggal ke current day
       daySelect.value = curDay;
       
-      // Event: saat mengubah bulan pada input group pertama
+      // Event: ketika user mengubah pilihan bulan pada group pertama
       monthSelect.addEventListener('change', function() {
         updateDayOptions(initialGroup);
         const now = new Date();
@@ -152,30 +160,73 @@
         }
       });
       
-      // Event: saat memilih tanggal pada input group pertama
+      // Event: ketika user memilih tanggal, fokus pindah ke input waktu (start time)
       daySelect.addEventListener('change', function() {
-        // Pindahkan fokus ke input waktu (start time) pada group yang sama
         initialGroup.querySelector('input[type="time"]').focus();
       });
       
       daySelect.focus();
     });
     
-    // Menambahkan input group baru
+    // Menambahkan input group baru dengan perhitungan default date yang mempertimbangkan jumlah sesi per hari
     function addInputGroup() {
       const container = document.getElementById('inputContainer');
       const now = new Date();
-      const curMonth = now.getMonth() + 1;
-      const curDay = now.getDate();
-      let defaultMonth = curMonth; // Default bila belum ada input sebelumnya
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const currentDay = now.getDate();
+      
+      let defaultMonth, defaultDay, defaultYear;
       
       const groups = container.querySelectorAll('.input-group');
-      if (groups.length > 0) {
+      if (groups.length === 0) {
+        // Jika belum ada input, gunakan current date
+        defaultMonth = currentMonth;
+        defaultDay = currentDay;
+        defaultYear = currentYear;
+      } else {
+        // Ambil data dari input group terakhir
         const lastGroup = groups[groups.length - 1];
-        const lastMonthSelect = lastGroup.querySelector('.month-select');
-        defaultMonth = parseInt(lastMonthSelect.value);
+        const lastMonth = parseInt(lastGroup.querySelector('.month-select').value);
+        const lastDay = parseInt(lastGroup.querySelector('.date-select').value);
+        // Tentukan tahun untuk lastGroup
+        let lastYear = (lastMonth < currentMonth) ? currentYear + 1 : currentYear;
+        
+        // Hitung berapa banyak input group yang sudah memiliki kombinasi (lastMonth, lastDay, lastYear)
+        let count = 0;
+        groups.forEach(group => {
+          const m = parseInt(group.querySelector('.month-select').value);
+          const d = parseInt(group.querySelector('.date-select').value);
+          let groupYear = (m < currentMonth) ? currentYear + 1 : currentYear;
+          if (m === lastMonth && d === lastDay && groupYear === lastYear) {
+            count++;
+          }
+        });
+        
+        if (count >= 2) {
+          // Jika sudah ada dua sesi pada hari yang sama, default menjadi hari berikutnya.
+          // Tentukan jumlah hari di bulan lastMonth
+          const daysInMonth = getDaysInMonth(lastMonth, lastYear);
+          if (lastDay >= daysInMonth) {
+            // Jika sudah di akhir bulan, maka tanggal default menjadi 1 dan bulan berubah ke next month.
+            defaultDay = 1;
+            defaultMonth = (lastMonth === 12) ? 1 : lastMonth + 1;
+            defaultYear = (lastMonth === 12) ? lastYear + 1 : lastYear;
+          } else {
+            // Jika belum akhir bulan, default hari berikutnya
+            defaultDay = lastDay + 1;
+            defaultMonth = lastMonth;
+            defaultYear = lastYear;
+          }
+        } else {
+          // Jika belum mencapai dua sesi pada hari yang sama, default tetap sama dengan input terakhir
+          defaultMonth = lastMonth;
+          defaultDay = lastDay;
+          defaultYear = lastYear;
+        }
       }
       
+      // Buat input group baru
       const group = document.createElement('div');
       group.className = 'input-group';
       
@@ -209,13 +260,10 @@
       container.appendChild(group);
       
       updateDayOptions(group);
+      // Set nilai default tanggal sesuai perhitungan
+      daySelect.value = defaultDay;
       
-      // Jika default bulan adalah current month, set tanggal ke current day; jika tidak, otomatis tanggal 1.
-      if (defaultMonth === curMonth) {
-        daySelect.value = curDay;
-      }
-      
-      // Event: saat mengubah bulan pada input group baru
+      // Event: ketika user mengganti bulan pada input group baru
       monthSelect.addEventListener('change', function() {
         updateDayOptions(group);
         const now = new Date();
@@ -226,11 +274,12 @@
         }
       });
       
-      // Event: saat memilih tanggal pada input group baru
+      // Event: ketika user memilih tanggal, fokus pindah ke input waktu (start time)
       daySelect.addEventListener('change', function() {
         group.querySelector('input[type="time"]').focus();
       });
       
+      // Fokus ke dropdown tanggal untuk input group baru
       daySelect.focus();
     }
     
@@ -239,7 +288,7 @@
       btn.parentElement.remove();
     }
     
-    // Menghitung nama hari menggunakan algoritma Zeller
+    // Fungsi algoritma Zeller untuk mendeteksi nama hari
     function deteksiHari(day, month, year) {
       if (month < 3) {
         month += 12;
@@ -256,14 +305,15 @@
     function generateSchedule() {
       const now = new Date();
       const curMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
       const inputs = document.querySelectorAll('.input-group');
       let outputHTML = `<div id="scheduleContent"><p>Saya tersedia waktu luang untuk diisi kegiatan mengajar pembelajaran kursus les pada:</p>`;
       
       inputs.forEach(group => {
         const month = parseInt(group.querySelector('.month-select').value);
         const day = parseInt(group.querySelector('.date-select').value);
-        // Jika bulan yang dipilih kurang dari current month, berarti itu adalah next month (tahun berikutnya)
-        const scheduleYear = (month < curMonth) ? now.getFullYear() + 1 : now.getFullYear();
+        // Tentukan tahun untuk setiap sesi berdasarkan pilihan bulan
+        const scheduleYear = (month < curMonth) ? currentYear + 1 : currentYear;
         const startTime = group.children[2].value.replace(':', '.');
         const endTime = group.children[3].value.replace(':', '.');
         const timeRange = `${startTime}-${endTime}`;
