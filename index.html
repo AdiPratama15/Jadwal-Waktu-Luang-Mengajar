@@ -106,49 +106,59 @@
       }
     }
     
-    // Mengisi dropdown bulan
+    // Mengisi dropdown bulan dengan hanya dua pilihan: current month dan next month
     function populateMonthSelect(selectElement, defaultMonth) {
       selectElement.innerHTML = '';
-      monthNames.forEach((month, index) => {
-        const option = document.createElement('option');
-        option.value = index + 1;
-        option.textContent = month;
-        if (defaultMonth && (index + 1) === defaultMonth) {
-          option.selected = true;
-        }
-        selectElement.appendChild(option);
-      });
+      const now = new Date();
+      const curMonth = now.getMonth() + 1;
+      if (!defaultMonth) defaultMonth = curMonth;
+      const nextMonth = curMonth === 12 ? 1 : curMonth + 1;
+      
+      // Option untuk current month
+      const option1 = document.createElement('option');
+      option1.value = curMonth;
+      option1.textContent = monthNames[curMonth - 1];
+      if (defaultMonth === curMonth) option1.selected = true;
+      selectElement.appendChild(option1);
+      
+      // Option untuk next month
+      const option2 = document.createElement('option');
+      option2.value = nextMonth;
+      option2.textContent = monthNames[nextMonth - 1];
+      if (defaultMonth === nextMonth) option2.selected = true;
+      selectElement.appendChild(option2);
     }
     
     // Inisialisasi input group pertama saat halaman dimuat dan arahkan fokus ke dropdown tanggal
     document.addEventListener('DOMContentLoaded', function() {
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth() + 1;
-      const currentDay = currentDate.getDate();
+      const now = new Date();
+      const curMonth = now.getMonth() + 1;
+      const curDay = now.getDate();
       
       const initialGroup = document.querySelector('.input-group');
       const monthSelect = initialGroup.querySelector('.month-select');
       const daySelect = initialGroup.querySelector('.date-select');
-      populateMonthSelect(monthSelect, currentMonth);
+      populateMonthSelect(monthSelect, curMonth);
       updateDayOptions(initialGroup);
-      daySelect.value = currentDay;
+      // Karena default bulan adalah current month, set tanggal default ke current day
+      daySelect.value = curDay;
       
-      // Update opsi tanggal ketika dropdown bulan berubah
       monthSelect.addEventListener('change', function() {
         updateDayOptions(initialGroup);
       });
       
-      // Fokus otomatis ke dropdown tanggal saat laman dimuat
       daySelect.focus();
     });
     
-    // Menambahkan input group baru dengan default day: jika bulan sama dengan current month, maka default ke current day; jika tidak, default ke 1.
+    // Menambahkan input group baru dengan default day:
+    // Jika default bulan (dari input group terakhir) sama dengan current month, maka default ke current day;
+    // Jika tidak, default ke 1.
     function addInputGroup() {
       const container = document.getElementById('inputContainer');
       const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentDay = now.getDate();
-      let defaultMonth = currentMonth; // default jika belum ada input sebelumnya
+      const curMonth = now.getMonth() + 1;
+      const curDay = now.getDate();
+      let defaultMonth = curMonth; // default jika belum ada input sebelumnya
       
       const groups = container.querySelectorAll('.input-group');
       if (groups.length > 0) {
@@ -191,16 +201,15 @@
       
       updateDayOptions(group);
       
-      // Jika default bulan sama dengan current month, set default day ke current day; jika tidak, biarkan default 1.
-      if (defaultMonth === currentMonth) {
-        daySelect.value = currentDay;
+      // Jika default bulan sama dengan current month, set default day ke current day.
+      if (defaultMonth === curMonth) {
+        daySelect.value = curDay;
       }
       
       monthSelect.addEventListener('change', function() {
         updateDayOptions(group);
       });
       
-      // Arahkan fokus ke dropdown tanggal setelah menambahkan input group baru
       daySelect.focus();
     }
     
@@ -224,22 +233,25 @@
     
     // Menghasilkan jadwal dari seluruh input group dan otomatis menyalin ke clipboard
     function generateSchedule() {
-      const currentYear = new Date().getFullYear();
+      const now = new Date();
+      const curMonth = now.getMonth() + 1;
       const inputs = document.querySelectorAll('.input-group');
       let outputHTML = `<div id="scheduleContent"><p>Saya tersedia waktu luang untuk diisi kegiatan mengajar pembelajaran kursus les pada:</p>`;
       
       inputs.forEach(group => {
         const month = parseInt(group.querySelector('.month-select').value);
         const day = parseInt(group.querySelector('.date-select').value);
+        // Tentukan tahun: jika bulan yang dipilih kurang dari current month, berarti itu adalah bulan next month (tahun berikutnya)
+        const scheduleYear = (month < curMonth) ? now.getFullYear() + 1 : now.getFullYear();
         const startTime = group.children[2].value.replace(':', '.');
         const endTime = group.children[3].value.replace(':', '.');
         const timeRange = `${startTime}-${endTime}`;
         
-        const hari = deteksiHari(day, month, currentYear);
+        const hari = deteksiHari(day, month, scheduleYear);
         outputHTML += `
           <p>
             Hari ${hari}, 
-            Tanggal: ${day} ${monthNames[month - 1]} ${currentYear},<br>
+            Tanggal: ${day} ${monthNames[month - 1]} ${scheduleYear},<br>
             Pukul: ${timeRange} WIB
           </p>
         `;
