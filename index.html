@@ -64,6 +64,21 @@
       border: 2px solid red !important;
       background-color: #ffdddd;
     }
+    
+    /* Media query untuk tampilan responsif pada layar kecil */
+    @media (max-width: 600px) {
+      .input-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .input-field {
+        margin-bottom: 10px;
+      }
+      /* Tombol hapus diletakkan di akhir secara horizontal */
+      .remove-btn {
+        align-self: flex-end;
+      }
+    }
   </style>
 </head>
 <body>
@@ -114,7 +129,7 @@
         requiredElements.forEach(elem => {
           if (!elem.value.trim()) {
             elem.classList.add('incomplete');
-            if (valid) { // Fokus hanya pada input pertama yang belum lengkap
+            if (valid) { // Fokus ke input pertama yang belum lengkap
               elem.focus();
             }
             valid = false;
@@ -159,7 +174,7 @@
       }
     }
     
-    // Mengisi dropdown bulan dengan hanya dua opsi: current month dan next month
+    // Mengisi dropdown bulan dengan dua opsi: current month dan next month
     function populateMonthSelect(selectElement, defaultMonth) {
       selectElement.innerHTML = '';
       const now = new Date();
@@ -180,7 +195,7 @@
       selectElement.appendChild(option2);
     }
     
-    // Fungsi untuk mengatur waktu end otomatis 1 jam setelah waktu start
+    // Mengatur waktu end otomatis 1 jam setelah waktu start
     function setDefaultEndTime(startInput, endInput) {
       if (startInput.value) {
         let parts = startInput.value.split(':');
@@ -244,9 +259,8 @@
       daySelect.focus();
     });
     
-    // Menambahkan input group baru dengan perhitungan default tanggal dan bulan yang disesuaikan
+    // Menambahkan input group baru dengan default tanggal & bulan yang disesuaikan
     function addInputGroup() {
-      // Validasi semua input sebelum menambahkan baris baru
       if (!validateInputs()) return;
       
       const container = document.getElementById('inputContainer');
@@ -256,7 +270,6 @@
       const currentDay = now.getDate();
       
       let defaultMonth, defaultDay, defaultYear;
-      
       const groups = container.querySelectorAll('.input-group');
       if (groups.length === 0) {
         defaultMonth = currentMonth;
