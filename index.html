@@ -48,6 +48,11 @@
       color: white;
       margin-top: 10px;
     }
+    /* Penanda kolom yang belum lengkap */
+    .incomplete {
+      border: 2px solid red !important;
+      background-color: #ffdddd;
+    }
   </style>
 </head>
 <body>
@@ -57,8 +62,8 @@
     <!-- Setiap input group memiliki dropdown bulan dan tanggal serta dua input waktu -->
     <div id="inputContainer">
       <div class="input-group">
-        <select class="month-select"></select>
-        <select class="date-select"></select>
+        <select class="month-select" required></select>
+        <select class="date-select" required></select>
         <input type="time" required>
         <input type="time" required>
         <button type="button" class="remove-btn" onclick="removeInputGroup(this)">-</button>
@@ -77,25 +82,44 @@
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
     
-    // Menghitung jumlah hari dalam bulan tertentu dengan memperhitungkan tahun
+    // Fungsi validasi: memeriksa setiap input/select yang wajib diisi
+    function validateInputs() {
+      let valid = true;
+      const groups = document.querySelectorAll('.input-group');
+      groups.forEach(group => {
+        const requiredElements = group.querySelectorAll('input[required], select[required]');
+        requiredElements.forEach(elem => {
+          if (!elem.value.trim()) {
+            elem.classList.add('incomplete');
+            if (valid) { // Fokus hanya pada input pertama yang belum lengkap
+              elem.focus();
+            }
+            valid = false;
+          } else {
+            elem.classList.remove('incomplete');
+          }
+        });
+      });
+      return valid;
+    }
+    
+    // Menghitung jumlah hari dalam bulan tertentu (dengan mempertimbangkan tahun)
     function getDaysInMonth(month, year) {
       return new Date(year, month, 0).getDate();
     }
     
-    // Fungsi untuk memperbarui opsi tanggal pada suatu input group
+    // Memperbarui opsi tanggal untuk suatu input group
     function updateDayOptions(group) {
       const monthSelect = group.querySelector('.month-select');
       const daySelect = group.querySelector('.date-select');
       const selectedMonth = parseInt(monthSelect.value);
       
-      // Tentukan tahun berdasarkan pilihan bulan dan current month
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
       const yearForSelected = (selectedMonth < currentMonth) ? currentYear + 1 : currentYear;
       const daysInMonth = getDaysInMonth(selectedMonth, yearForSelected);
       
-      // Simpan nilai tanggal sebelumnya (jika ada)
       const previousDay = daySelect.value;
       daySelect.innerHTML = '';
       for (let i = 1; i <= daysInMonth; i++) {
@@ -112,7 +136,7 @@
       }
     }
     
-    // Fungsi untuk mengisi dropdown bulan dengan hanya dua opsi: current month dan next month
+    // Mengisi dropdown bulan dengan hanya dua opsi: current month dan next month
     function populateMonthSelect(selectElement, defaultMonth) {
       selectElement.innerHTML = '';
       const now = new Date();
@@ -145,6 +169,18 @@
       }
     }
     
+    // Tambahkan event listener untuk setiap elemen wajib agar saat berubah, kelas incomplete dihapus
+    function addInputListener(group) {
+      const requiredElements = group.querySelectorAll('input[required], select[required]');
+      requiredElements.forEach(elem => {
+        elem.addEventListener('input', function() {
+          if (elem.value.trim() !== '') {
+            elem.classList.remove('incomplete');
+          }
+        });
+      });
+    }
+    
     // Inisialisasi input group pertama saat halaman dimuat
     document.addEventListener('DOMContentLoaded', function() {
       const now = new Date();
@@ -160,10 +196,10 @@
       
       populateMonthSelect(monthSelect, curMonth);
       updateDayOptions(initialGroup);
-      // Karena default adalah current month, set tanggal ke current day
       daySelect.value = curDay;
       
-      // Saat user mengubah pilihan bulan, jika bukan current month maka set tanggal ke 1 dan fokus ke tanggal
+      addInputListener(initialGroup);
+      
       monthSelect.addEventListener('change', function() {
         updateDayOptions(initialGroup);
         const now = new Date();
@@ -174,12 +210,10 @@
         }
       });
       
-      // Saat user memilih tanggal, fokus pindah ke input waktu start
       daySelect.addEventListener('change', function() {
         startTimeInput.focus();
       });
       
-      // Saat user memilih waktu start, otomatis set waktu end menjadi 1 jam kemudian
       startTimeInput.addEventListener('change', function() {
         setDefaultEndTime(startTimeInput, endTimeInput);
       });
@@ -187,8 +221,11 @@
       daySelect.focus();
     });
     
-    // Menambahkan input group baru dengan default tanggal dan bulan yang disesuaikan
+    // Menambahkan input group baru dengan perhitungan default tanggal dan bulan yang disesuaikan
     function addInputGroup() {
+      // Validasi semua input sebelum menambahkan baris baru
+      if (!validateInputs()) return;
+      
       const container = document.getElementById('inputContainer');
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
@@ -241,10 +278,12 @@
       
       const monthSelect = document.createElement('select');
       monthSelect.className = 'month-select';
+      monthSelect.setAttribute('required', '');
       populateMonthSelect(monthSelect, defaultMonth);
       
       const daySelect = document.createElement('select');
       daySelect.className = 'date-select';
+      daySelect.setAttribute('required', '');
       
       const startTimeInput = document.createElement('input');
       startTimeInput.type = 'time';
@@ -271,6 +310,8 @@
       updateDayOptions(group);
       daySelect.value = defaultDay;
       
+      addInputListener(group);
+      
       monthSelect.addEventListener('change', function() {
         updateDayOptions(group);
         const now = new Date();
@@ -285,7 +326,6 @@
         group.querySelector('input[type="time"]').focus();
       });
       
-      // Event: setelah user memilih waktu start, set waktu end otomatis 1 jam kemudian
       startTimeInput.addEventListener('change', function() {
         setDefaultEndTime(startTimeInput, endTimeInput);
       });
@@ -313,6 +353,9 @@
     
     // Menghasilkan jadwal dari seluruh input group dan menyalin ke clipboard
     function generateSchedule() {
+      // Validasi terlebih dahulu sebelum membuat jadwal
+      if (!validateInputs()) return;
+      
       const now = new Date();
       const curMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
@@ -346,6 +389,9 @@
     
     // Menyalin jadwal ke clipboard
     function copySchedule() {
+      // Validasi ulang sebelum menyalin
+      if (!validateInputs()) return;
+      
       const scheduleContent = document.getElementById('scheduleContent');
       if (scheduleContent) {
         const text = scheduleContent.innerText;
